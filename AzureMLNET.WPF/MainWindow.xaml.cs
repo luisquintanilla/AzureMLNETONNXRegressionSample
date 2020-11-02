@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using AzureMLNET.Shared;
 using AzureMLNET.Shared.Schemas;
+using Microsoft.ML;
 
 namespace AzureMLNET.WPF
 {
@@ -22,19 +23,24 @@ namespace AzureMLNET.WPF
     /// </summary>
     public partial class MainWindow : Window
     {
-        private IModelLoader<AzureMLONNX.Input,AzureMLONNX.Output> _modelLoader;
+        private PredictionEngine<AzureMLONNX.Input, AzureMLONNX.Output> _predictionEngine;
 
         public MainWindow()
         {
             InitializeComponent();
-            _modelLoader = new AzureMLModelLoader();
+            
+            // Initialize Model Loader
+            var modelLoader = new AzureMLModelLoader();
+
+            // Get saved ML.NET Pipeline
+            var model = modelLoader.GetSavedModel("azureml-mlnet-model");
+
+            // Create PredictionEngine
+            _predictionEngine = modelLoader.GetPredictionEngine(model);
         }
 
         private void PredictFareButton_Click(object sender, RoutedEventArgs e)
         {
-
-            var model = _modelLoader.GetSavedModel("azureml-mlnet-model");
-            var predictionEngine = _modelLoader.GetPredictionEngine(model);
             var input = new AzureMLONNX.Input
             {
                 VendorId = (VendorId.SelectedItem as ComboBoxItem).Content as string,
@@ -45,7 +51,7 @@ namespace AzureMLNET.WPF
                 PaymentType = (PaymentType.SelectedItem as ComboBoxItem).Content as string
             };
 
-            PredictedFare.Content = predictionEngine.Predict(input).PredictedFare.First();
+            PredictedFare.Content = _predictionEngine.Predict(input).PredictedFare.First();
         }
     }
 }
